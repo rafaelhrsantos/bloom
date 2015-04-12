@@ -438,6 +438,73 @@ public:
       return salt_.size();
    }
 
+
+   // DESERIALIZATION
+   void load(std::string path) {
+ 
+   
+   std::ifstream o(path, std::ios::in | std::ifstream::binary);
+   
+  
+   o.read(reinterpret_cast<char*>(&salt_count_), sizeof(unsigned int));
+   o.read(reinterpret_cast<char*>(&table_size_), sizeof(unsigned long long int ));
+   o.read(reinterpret_cast<char*>(&raw_table_size_) , sizeof(unsigned long long int ));
+   o.read(reinterpret_cast<char*>(&projected_element_count_) , sizeof(unsigned long long int ));
+   o.read(reinterpret_cast<char*>(&inserted_element_count_) , sizeof(unsigned int));
+   o.read(reinterpret_cast<char*>(&random_seed_) , sizeof(unsigned long long int ));
+   o.read(reinterpret_cast<char*>(&desired_false_positive_probability_) ,sizeof(double));
+   //NB
+   o.read(reinterpret_cast<char*>(&raw_table_size_ ), sizeof( unsigned long long int) );
+   bit_table_ = new cell_type[static_cast<std::size_t>(raw_table_size_)];
+   o.read(reinterpret_cast<char*>(bit_table_), sizeof(unsigned char)*raw_table_size_);
+   //NB2
+   int s;
+   o.read(reinterpret_cast<char*>(&s), sizeof(int));
+   std::cout << "deserializing " << s << "\n" ;
+   for (int i=0; i< s; i++) {
+    bloom_type temp;
+    o.read(reinterpret_cast<char*>(&temp), sizeof(bloom_type));
+    salt_.push_back(temp);
+
+  }
+  
+  
+
+
+
+    o.close();
+  }
+
+  //SERIALIZATION
+  void save(std::string path) {
+ 
+    std::ofstream o;
+    o.open (path, std::ios::binary);
+   
+  
+   o.write(reinterpret_cast<char*>(&salt_count_) , sizeof(unsigned int));
+   o.write(reinterpret_cast<char*>(&table_size_) , sizeof(unsigned long long int ));
+   o.write(reinterpret_cast<char*>(&raw_table_size_) , sizeof(unsigned long long int ));
+   o.write(reinterpret_cast<char*>(&projected_element_count_) , sizeof(unsigned long long int ));
+   o.write(reinterpret_cast<char*>(&inserted_element_count_) , sizeof(unsigned int));
+   o.write(reinterpret_cast<char*>(&random_seed_) , sizeof(unsigned long long int ));
+   o.write(reinterpret_cast<char*>(&desired_false_positive_probability_) ,sizeof(double));
+
+   //NB
+   o.write(reinterpret_cast<char*>(&raw_table_size_ ), sizeof( unsigned long long int) );
+   o.write(reinterpret_cast<char*>(bit_table_), sizeof(unsigned char)*raw_table_size_);
+
+   //NB2
+   int s = salt_.size();
+   o.write(reinterpret_cast<char*>(&s), sizeof(int));
+   for (int i=0; i<s; i++)
+      o.write(reinterpret_cast<char*>(&(salt_[i])),sizeof(bloom_type) );
+
+    o.close();
+    std::cout << "serialization done\n";
+  }
+
+
 protected:
 
    inline virtual void compute_indices(const bloom_type& hash, std::size_t& bit_index, std::size_t& bit) const
